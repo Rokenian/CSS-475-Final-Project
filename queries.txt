@@ -1,0 +1,157 @@
+//View eligible
+select title, cost, startDate, dayOfWeek, numOfWeeks, startTime, duration, roomNumber, capacity
+from class
+	join classinstance on (classinstance.classid = class.id)
+where class.id in (select prereqforid
+					from prerequisite
+						join class on (class.id = prerequisite.requiredid)
+					where requiredid in (select class.id AS classId
+										from student
+											join enrolled on (enrolled.studentid = student.id)
+											join classinstance on (classinstance.id = enrolled.classinstanceid)
+											join class on (classinstance.classid = class.id)
+										where firstname like "oatmeal" AND enrolled.statusid = 2))
+
+UNION
+
+select title, cost, startDate, dayOfWeek, numOfWeeks, startTime, duration, roomNumber, capacity
+from class
+	join classinstance on (classinstance.classid = class.id)
+	left join prerequisite on (prerequisite.prereqforid = class.id)
+where prereqforid is null;
+
+
+
+//View prereqs for a class
+select title, cost, startDate, dayOfWeek, numOfWeeks, startTime, duration, roomNumber, capacity
+from class
+	join classinstance on (classinstance.classid = class.id)
+where class.id in (select requiredid
+					from class
+						join prerequisite on (prerequisite.prereqforid = class.id)
+					where title like "Intermediate Salsa");
+
+
+
+//enroll in class
+insert into enrolled
+values((select id
+		from student
+		where emailAddress like "orangeC@gmail.com"),
+        (select classinstance.id
+        from class
+			join classinstance on (classinstance.classid = class.id)
+		where class.title like "Intro to Foxtrot" AND startTime = 1000 AND startDate = date('2020-03-07')),
+        3,
+        1,
+        1);
+
+select *
+from student
+	join enrolled on (enrolled.studentid = student.id)
+where emailAddress like "orangeC@gmail.com";
+
+//drop a class
+update enrolled
+set statusId = 3
+where studentid = (select id
+		from student
+		where emailAddress like "orangeC@gmail.com")
+        AND
+        classinstanceid = (select classinstance.id
+							from class
+								join classinstance on (classinstance.classid = class.id)
+							where class.title like "Intro to Foxtrot" AND startTime = 1000 AND startDate = date('2020-03-07'));
+
+select * from student join enrolled on (enrolled.studentid = student.id) where firstname like "orange";
+
+//view classes by instructor
+select title, cost, startDate, dayOfWeek, numOfWeeks, startTime, duration, roomNumber, capacity
+from instructor
+	join teaching on (teaching.instructorid = instructor.id)
+    join classinstance on (teaching.classinstanceid = classinstance.id)
+    join class on (classinstance.classid = class.id)
+where firstName like "Ben" AND lastName like "Smith";
+
+
+//see who's paid for a class
+select firstName, lastName, emailAddress, phoneNumber
+from class
+	join classinstance on (classinstance.classid = class.id)
+    join enrolled on (classinstance.id = enrolled.classinstanceid)
+    join student on (student.id = enrolled.studentid)
+where class.title like "Intro to Foxtrot" AND startTime = 1000 AND startDate = date('2020-03-07') AND paid = 1;
+
+//view students in class
+select firstName, lastName, emailAddress, phoneNumber
+from class
+    join classinstance on (classinstance.classid = class.id)
+	join enrolled on (enrolled.classinstanceid = classinstance.id)
+    join student on (student.id = enrolled.studentid)
+where class.title like "Intro to Swing" AND startTime = 1900 AND startDate = date('2020-03-02') AND statusId = 1;
+
+//view leaders in class
+select firstName, lastName, emailAddress, phoneNumber
+from class
+    join classinstance on (classinstance.classid = class.id)
+	join enrolled on (enrolled.classinstanceid = classinstance.id)
+    join student on (student.id = enrolled.studentid)
+where class.title like "Intro to Swing" AND startTime = 1900 AND startDate = date('2020-03-02') AND statusId = 1 AND roleID = 3;
+
+//view followers in class
+select firstName, lastName, emailAddress, phoneNumber
+from class
+    join classinstance on (classinstance.classid = class.id)
+	join enrolled on (enrolled.classinstanceid = classinstance.id)
+    join student on (student.id = enrolled.studentid)
+where class.title like "Intro to Swing" AND startTime = 1900 AND startDate = date('2020-03-02') AND statusId = 1 AND roleID = 2;
+
+//assign instructor
+begin;
+
+insert into teaching
+values((select id
+		from instructor
+		where emailAddress like 'joeS@CoolDudes.com'),
+        (select classinstance.id
+		from classinstance
+			join class on (class.id = classinstance.classid)
+		where class.title like "Intro to Swing" AND startTime = 1900 AND startDate = date('2020-03-02')));
+
+select * from teaching join instructor on (instructor.id = teaching.instructorid) where classinstanceid = 1;
+
+rollback;
+
+//remove instructor from class instance
+delete from teaching
+where instructorid = (select id
+					from instructor
+					where emailAddress like 'joeS@CoolDudes.com')
+	AND classinstanceid = (select classinstance.id
+							from classinstance
+								join class on (class.id = classinstance.classid)
+							where class.title like "Intro to Swing" AND startTime = 1900 AND startDate = date('2020-03-02'));
+
+//update biography
+begin;
+
+update instructor
+set biography = 'I\'m a swing dance instructor, yo'
+where emailAddress like 'benS@CoolDudes.com';
+
+select * from instructor where emailAddress like 'benS@CoolDudes.com';
+
+rollback;
+
+//view instructors for class
+select firstName, lastName, phoneNumber, emailAddress
+from instructor
+	join teaching on (teaching.instructorid = instructor.id)
+    join classinstance on (teaching.classinstanceid = classinstance.id)
+    join class on (class.id = classinstance.id)
+where class.title like "Intro to Swing" AND startTime = 1900 AND startDate = date('2020-03-02');
+
+//display bio
+select biography
+from instructor
+where firstname like 'Joe' AND lastname like 'Smith';
