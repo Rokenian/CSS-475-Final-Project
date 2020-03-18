@@ -92,6 +92,8 @@ namespace CoolDudesFinal
             cmd.CommandText = queryText;
             cmd.ExecuteNonQuery();
             connection.Close();
+
+            Console.WriteLine($"Account for {firstName} {lastName} created.");
         }
 
         public void viewAllClasses()
@@ -110,7 +112,8 @@ namespace CoolDudesFinal
             cmd.CommandText = queryText;
 
             MySqlDataReader reader = cmd.ExecuteReader();
-            
+
+            Console.WriteLine("All classes:");
             Console.WriteLine("Title \t\t\t Cost \t Start Date \t\t Day \t Number of Weeks \t Start Time \t Duration \t Room Number \t Capacity");
             while (reader.Read())
             {
@@ -135,6 +138,7 @@ namespace CoolDudesFinal
                 Console.WriteLine($"{title} \t\t ${cost} \t {startDate} \t {day} \t {numWeeks} \t {parsedTime} \t {duration} \t {roomNum} \t {capacity}");
             }
 
+            Console.WriteLine();
             connection.Close();
         }
 
@@ -172,6 +176,7 @@ namespace CoolDudesFinal
 
             MySqlDataReader reader = cmd.ExecuteReader();
 
+            Console.WriteLine("You are eligible for the following classes:");
             Console.WriteLine("Title \t\t\t Cost \t Start Date \t\t Day \t Number of Weeks \t Start Time \t Duration \t Room Number \t Capacity");
             while (reader.Read())
             {
@@ -196,6 +201,7 @@ namespace CoolDudesFinal
                 Console.WriteLine($"{title} \t\t ${cost} \t {startDate} \t {day} \t {numWeeks} \t {parsedTime} \t {duration} \t {roomNum} \t {capacity}");
             }
 
+            Console.WriteLine();
             connection.Close();
         }
 
@@ -294,6 +300,8 @@ namespace CoolDudesFinal
             cmd.CommandText = queryText;
             cmd.ExecuteNonQuery();
             connection.Close();
+
+            Console.WriteLine($"Successfully enrolled in {classTitle} starting {classStartDate}.");
         }
 
         public void dropClass(String classTitle, String classStartDate, int classStartTime)
@@ -806,6 +814,32 @@ namespace CoolDudesFinal
         {
             currentUser = null;
             isCurrentUserInstructor = false;
+        }
+
+        public void completeClass(String classTitle, String classStartDate, int classStartTime, String studentFirstName, String studentLastName)
+        {
+            if (!isCurrentUserInstructor)
+            {
+                Console.WriteLine("This function is not available to students.");
+                return;
+            }
+
+            String queryText = "update enrolled\n" +
+                                "set statusid = 2\n" +
+                                "where classinstanceid = (select classinstance.id\n" +
+                                                        "from classinstance\n" +
+                                                            "join class on (class.id = classinstance.id)\n" +
+                                                        $"where title like '{classTitle}' AND startDate = date('{classStartDate}') AND startTime = {classStartTime})\n" +
+                                    "AND studentid = (select student.id\n" +
+                                                    "from student\n" +
+                                                    $"where firstName like '{studentFirstName}' AND lastName like '{studentLastName}');";
+
+            connection.Open();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.Connection = connection;
+            cmd.CommandText = queryText;
+            cmd.ExecuteNonQuery();
+            connection.Close();
         }
     }
 }
